@@ -13,13 +13,6 @@ let imageDiff = (image1, image2) => {
   });
 };
 
-let imageTest = (image1, image2) => {
-  PNG.decode(image1, (pixels1) => {
-    console.log('First Pixel: ', pixels1[0]);
-  });
-};
-
 module.exports = {
-  imageTest: imageTest,
   imageDiff: imageDiff
 }

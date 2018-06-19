@@ -11,13 +11,6 @@ let imageDiff = (image1, image2) => {
       });
     });
   });
-  
-  let name1 = image1.split('/');
-  name1 = name1[name1.length - 1];
-  let name2 = image2.split('/');
-  name2 = name2[name2.length - 1];
-  console.log(`${name1} vs ${name2} diff: ${diff}`);
-  return diff;
 };
 
 let imageTest = (image1, image2) => {

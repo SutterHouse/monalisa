@@ -1,19 +1,6 @@
-const jsdom = require("jsdom");
-const { JSDOM } = jsdom;
+const Canvas = require('canvas');
+let canvas = new Canvas(800, 500);
 
-const dom = new JSDOM(`
-  <!DOCTYPE html>
-  <html>
-  <head>
-  </head>
-  <body>
-  <canvas id="canvas"></canvas>
-  </body>
-  </html>
-`);
-
-var canvas = dom.window.document.getElementById('canvas');
-console.log(canvas);
 var ctx = canvas.getContext('2d');
 ctx.fillStyle = 'rgba(20, 24, 159, 0.59)';
 ctx.beginPath();
@@ -32,3 +19,15 @@ ctx.lineTo(150, 300);
 ctx.lineTo(100, 300);
 ctx.closePath();
 ctx.fill();
+
+var fs = require('fs')
+  , out = fs.createWriteStream(__dirname + '/text.png')
+  , stream = canvas.pngStream();
+ 
+stream.on('data', function(chunk){
+  out.write(chunk);
+});
+ 
+stream.on('end', function(){
+  console.log('saved png');
+});

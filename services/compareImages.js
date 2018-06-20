@@ -13,6 +13,4 @@ let imageDiff = (image1, image2) => {
   });
 };
 
-module.exports = {
-  imageDiff: imageDiff
-}
+module.exports = imageDiff;

@@ -5,6 +5,7 @@ class DNA {
     this.canvasHeight = canvasHeight;
 
     this.DEFAULT_NUMBER_OF_VERTICES = 5;
+    this.DEFAULT_POLYGON_ALPHA = 0.5;
 
     this.LO_COORD_MUT_LB = .95;
     this.LO_COORD_MUT_UB = 1.05;
@@ -122,10 +123,58 @@ class DNA {
   }
 
   removeVertex(polygon) {
-    var removalIndex = Math.floor(Math.random() * polygon.length);
-    polygon.coordinates.splice(removalIndex, 1);
+    if (polygon.coordinates.length > 3) {
+      var removalIndex = Math.floor(Math.random() * polygon.length);
+      polygon.coordinates.splice(removalIndex, 1);
+    }
+    
+  }
+
+  render(index, projectName) {
+    //create canvas
+    const Canvas = require('canvas');
+    let canvas = new Canvas(this.canvasWidth, this.canvasHeight);
+    var ctx = canvas.getContext('2d');
+
+    //iterate through polygons
+    this.polygons.forEach(polygon => {
+      //set polygon color
+      ctx.fillStyle = `rgba(${polygon.color.r}, ${polygon.color.g}, ${polygon.color.b}, ${this.DEFAULT_POLYGON_ALPHA})`;
+
+      ctx.beginPath();
+      ctx.moveTo(polygon.coordinates[0].x, polygon.coordinates[0].y);
+      for (var i = 1; i < polygon.coordinates.length; i++) {
+        ctx.lineTo(polygon.coordinates[i].x, polygon.coordinates[i].y);
+      }
+      ctx.closePath();
+      ctx.fill();
+    });
+
+    //output to generated_image.png
+    var dir  = __dirname + `/${projectName}`;
+    var fs = require('fs');
+
+    if (!fs.existsSync(dir)){
+      fs.mkdirSync(dir);
+    }
+    
+    var out = fs.createWriteStream(dir + `/${index}.png`);
+    var stream = canvas.pngStream();
+
+    stream.on('data', function(chunk){
+      out.write(chunk);
+    });
+    
+    stream.on('end', function(){
+
+    });
   }
 
 }
 
 
+module.exports = DNA;
+
+
+var dna = new DNA(50, 200, 200);
+dna.render(1, 'test');

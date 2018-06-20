@@ -1,3 +1,6 @@
+const Canvas = require('canvas');
+var fs = require('fs');
+
 class DNA {
   constructor(numberOfPolygons, canvasWidth, canvasHeight) {
     this.numberOfPolygons = numberOfPolygons;
@@ -5,7 +8,7 @@ class DNA {
     this.canvasHeight = canvasHeight;
 
     this.DEFAULT_NUMBER_OF_VERTICES = 5;
-    this.DEFAULT_POLYGON_ALPHA = 0.5;
+    this.DEFAULT_POLYGON_ALPHA = 1;
 
     this.LO_COORD_MUT_LB = .95;
     this.LO_COORD_MUT_UB = 1.05;
@@ -19,6 +22,9 @@ class DNA {
 
     this.polygons = [];
 
+  }
+
+  populate() {
     for (var i = 0; i < this.numberOfPolygons; i++) {
       var polygon = {
         coordinates: [],
@@ -47,9 +53,9 @@ class DNA {
         this.mutateCoordinate(coordinate);
       });
 
-      this.mutateColor(color);
+      this.mutateColor(polygon.color);
 
-      this.mutateNumberOfVertices;
+      this.mutateNumberOfVertices(polygon);
     });
   }
 
@@ -72,14 +78,34 @@ class DNA {
     let py = Math.floor(Math.random() * (3 + 1));
 
     if (px === 2) {
-      coordinate.x *= Math.random() * (this.LO_COORD_MUT_UB - this.LO_COORD_MUT_LB) + this.LO_COORD_MUT_LB;
+      if (coordinate.x) {
+        coordinate.x *= Math.random() * (this.LO_COORD_MUT_UB * coordinate.x - this.LO_COORD_MUT_LB * coordinate.x) + this.LO_COORD_MUT_LB * coordinate.x;
+        coordinate.x %= this.canvasWidth;
+      } else {
+        coordinate.x += Math.random() * (this.LO_COORD_MUT_UB * coordinate.x - this.LO_COORD_MUT_LB * coordinate.x) + this.LO_COORD_MUT_LB * coordinate.x;
+      }
     } else if (px === 3) {
-      coordinate.x *= Math.random() * (this.HI_COORD_MUT_UB - this.HI_COORD_MUT_LB) + this.HI_COORD_MUT_LB;
+      if (coordinate.x) {
+        coordinate.x *= Math.random() * (this.HI_COORD_MUT_UB * coordinate.x - this.HI_COORD_MUT_LB * coordinate.x) + this.HI_COORD_MUT_LB * coordinate.x;
+        coordinate.x %= this.canvasWidth;
+      } else {
+        coordinate.x += Math.random() * (this.HI_COORD_MUT_UB * coordinate.x - this.HI_COORD_MUT_LB * coordinate.x) + this.HI_COORD_MUT_LB * coordinate.x;
+      }
     }
     if (py === 2) {
-      coordinate.y *= Math.random() * (this.LO_COORD_MUT_UB - this.LO_COORD_MUT_LB) + this.LO_COORD_MUT_LB;
+      if (coordinate.y) {
+        coordinate.y *= Math.random() * (this.LO_COORD_MUT_UB * coordinate.y - this.LO_COORD_MUT_LB * coordinate.y) + this.LO_COORD_MUT_LB * coordinate.y;
+        coordinate.y %= this.canvasWidth;
+      } else {
+        coordinate.y += Math.random() * (this.LO_COORD_MUT_UB * coordinate.y - this.LO_COORD_MUT_LB * coordinate.y) + this.LO_COORD_MUT_LB * coordinate.y;
+      }
     } else if (py === 3) {
-      coordinate.y *= Math.random() * (this.HI_COORD_MUT_UB - this.HI_COORD_MUT_LB) + this.HI_COORD_MUT_LB;
+      if (coordinate.y) {
+        coordinate.y *= Math.random() * (this.HI_COORD_MUT_UB * coordinate.y - this.HI_COORD_MUT_LB * coordinate.y) + this.HI_COORD_MUT_LB * coordinate.y;
+        coordinate.y %= this.canvasWidth;
+      } else {
+        coordinate.y += Math.random() * (this.HI_COORD_MUT_UB * coordinate.y - this.HI_COORD_MUT_LB * coordinate.y) + this.HI_COORD_MUT_LB * coordinate.y;
+      }
     }
   }
 
@@ -89,19 +115,49 @@ class DNA {
     let pb = Math.floor(Math.random() * (3 + 1));
     
     if (pr === 2) {
-      color.r *= Math.random() * (this.LO_COLOR_MUT_UB - this.LO_COLOR_MUT_LB) + this.LO_COLOR_MUT_LB;
+      if (color.r) {
+        color.r *= Math.random() * (this.LO_COLOR_MUT_UB * color.r - this.LO_COLOR_MUT_LB * color.r) + this.LO_COLOR_MUT_LB * color.r;
+        color.r %= 255;
+      } else {
+        color.r += Math.floor(Math.random() * (12 + 1));
+      }
     } else if (pr === 3) {
-      polygon.color.r *= Math.random() * (this.HI_COLOR_MUT_UB - this.HI_COLOR_MUT_LB) + this.HI_COLOR_MUT_LB;
+      if (color.r) {
+        color.r *= Math.random() * (this.HI_COLOR_MUT_UB * color.r - this.HI_COLOR_MUT_LB * color.r) + this.HI_COLOR_MUT_LB * color.r;
+        color.r %= 255;
+      } else {
+        color.r += Math.floor(Math.random() * (12 + 1));
+      }
     }
     if (pg === 2) {
-      color.g *= Math.random() * (this.LO_COLOR_MUT_UB - this.LO_COLOR_MUT_LB) + this.LO_COLOR_MUT_LB;
+      if (color.g) {
+        color.g *= Math.random() * (this.LO_COLOR_MUT_UB * color.g - this.LO_COLOR_MUT_LB * color.g) + this.LO_COLOR_MUT_LB * color.g;
+        color.g %= 255;
+      } else {
+        color.g += Math.floor(Math.random() * (12 + 1));
+      }
     } else if (pg === 3) {
-      color.g *= Math.random() * (this.HI_COLOR_MUT_UB - this.HI_COLOR_MUT_LB) + this.HI_COLOR_MUT_LB;
+      if (color.g) {
+        color.g *= Math.random() * (this.HI_COLOR_MUT_UB * color.g - this.HI_COLOR_MUT_LB * color.g) + this.HI_COLOR_MUT_LB * color.g;
+        color.g %= 255;
+      } else {
+        color.g += Math.floor(Math.random() * (12 + 1));
+      }
     }
     if (pb === 2) {
-      color.b *= Math.random() * (this.LO_COLOR_MUT_UB - this.LO_COLOR_MUT_LB) + this.LO_COLOR_MUT_LB;
+      if (color.b) {
+        color.b *= Math.random() * (this.LO_COLOR_MUT_UB * color.b - this.LO_COLOR_MUT_LB * color.b) + this.LO_COLOR_MUT_LB * color.b;
+        color.b %= 255;
+      } else {
+        color.b += Math.floor(Math.random() * (12 + 1));
+      }
     } else if (pb === 3) {
-      color.b *= Math.random() * (this.HI_COLOR_MUT_UB - this.HI_COLOR_MUT_LB) + this.HI_COLOR_MUT_LB;
+      if (color.b) {
+        color.b *= Math.random() * (this.HI_COLOR_MUT_UB * color.b - this.HI_COLOR_MUT_LB * color.b) + this.HI_COLOR_MUT_LB * color.b;
+        color.b %= 255;
+      } else {
+        color.b += Math.floor(Math.random() * (12 + 1));
+      }
     }
   }
 
@@ -130,9 +186,8 @@ class DNA {
     
   }
 
-  render(index, projectName) {
+  render(fileName, projectName) {
     //create canvas
-    const Canvas = require('canvas');
     let canvas = new Canvas(this.canvasWidth, this.canvasHeight);
     var ctx = canvas.getContext('2d');
 
@@ -152,13 +207,17 @@ class DNA {
 
     //output to generated_image.png
     var dir  = __dirname + `/${projectName}`;
-    var fs = require('fs');
 
     if (!fs.existsSync(dir)){
       fs.mkdirSync(dir);
     }
-    
-    var out = fs.createWriteStream(dir + `/${index}.png`);
+
+    // let imageData = canvas.toDataURL().split(';base64,').pop();
+
+    // fs.writeFileSync(dir + `/${fileName}.png`, imageData, {encoding: 'base64'});
+
+
+    var out = fs.createWriteStream(dir + `/${fileName}.png`);
     var stream = canvas.pngStream();
 
     stream.on('data', function(chunk){
@@ -168,6 +227,21 @@ class DNA {
     stream.on('end', function(){
 
     });
+  }
+
+  clone() {
+    var newDNA = new DNA(this.numberOfPolygons, this.canvasWidth, this.canvasHeight);
+    for (var i = 0; i < this.polygons.length; i++) {
+      var newPolygon = {};
+      newPolygon.color = Object.assign({}, this.polygons[i].color);
+
+      newPolygon.coordinates = [];
+      for (var j = 0; j < this.polygons[i].coordinates.length; j++) {
+        newPolygon.coordinates[j] = Object.assign({}, this.polygons[i].coordinates[j]);
+      }
+      newDNA.polygons.push(newPolygon);
+    }
+    return newDNA;
   }
 
 }

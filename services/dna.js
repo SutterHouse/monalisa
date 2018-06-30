@@ -1,5 +1,6 @@
 const Canvas = require('canvas');
-var fs = require('fs');
+const fs = require('fs');
+const Promise = require('bluebird');
 
 class DNA {
   constructor(numberOfPolygons, canvasWidth, canvasHeight) {
@@ -8,7 +9,7 @@ class DNA {
     this.canvasHeight = canvasHeight;
 
     this.DEFAULT_NUMBER_OF_VERTICES = 5;
-    this.DEFAULT_POLYGON_ALPHA = 1;
+    this.DEFAULT_POLYGON_ALPHA = 0.5;
 
     this.LO_COORD_MUT_LB = .95;
     this.LO_COORD_MUT_UB = 1.05;
@@ -79,14 +80,14 @@ class DNA {
 
     if (px === 2) {
       if (coordinate.x) {
-        coordinate.x *= Math.random() * (this.LO_COORD_MUT_UB * coordinate.x - this.LO_COORD_MUT_LB * coordinate.x) + this.LO_COORD_MUT_LB * coordinate.x;
+        coordinate.x = Math.random() * (this.LO_COORD_MUT_UB * coordinate.x - this.LO_COORD_MUT_LB * coordinate.x) + this.LO_COORD_MUT_LB * coordinate.x;
         coordinate.x %= this.canvasWidth;
       } else {
         coordinate.x += Math.random() * (this.LO_COORD_MUT_UB * coordinate.x - this.LO_COORD_MUT_LB * coordinate.x) + this.LO_COORD_MUT_LB * coordinate.x;
       }
     } else if (px === 3) {
       if (coordinate.x) {
-        coordinate.x *= Math.random() * (this.HI_COORD_MUT_UB * coordinate.x - this.HI_COORD_MUT_LB * coordinate.x) + this.HI_COORD_MUT_LB * coordinate.x;
+        coordinate.x = Math.random() * (this.HI_COORD_MUT_UB * coordinate.x - this.HI_COORD_MUT_LB * coordinate.x) + this.HI_COORD_MUT_LB * coordinate.x;
         coordinate.x %= this.canvasWidth;
       } else {
         coordinate.x += Math.random() * (this.HI_COORD_MUT_UB * coordinate.x - this.HI_COORD_MUT_LB * coordinate.x) + this.HI_COORD_MUT_LB * coordinate.x;
@@ -94,14 +95,14 @@ class DNA {
     }
     if (py === 2) {
       if (coordinate.y) {
-        coordinate.y *= Math.random() * (this.LO_COORD_MUT_UB * coordinate.y - this.LO_COORD_MUT_LB * coordinate.y) + this.LO_COORD_MUT_LB * coordinate.y;
+        coordinate.y = Math.random() * (this.LO_COORD_MUT_UB * coordinate.y - this.LO_COORD_MUT_LB * coordinate.y) + this.LO_COORD_MUT_LB * coordinate.y;
         coordinate.y %= this.canvasWidth;
       } else {
         coordinate.y += Math.random() * (this.LO_COORD_MUT_UB * coordinate.y - this.LO_COORD_MUT_LB * coordinate.y) + this.LO_COORD_MUT_LB * coordinate.y;
       }
     } else if (py === 3) {
       if (coordinate.y) {
-        coordinate.y *= Math.random() * (this.HI_COORD_MUT_UB * coordinate.y - this.HI_COORD_MUT_LB * coordinate.y) + this.HI_COORD_MUT_LB * coordinate.y;
+        coordinate.y = Math.random() * (this.HI_COORD_MUT_UB * coordinate.y - this.HI_COORD_MUT_LB * coordinate.y) + this.HI_COORD_MUT_LB * coordinate.y;
         coordinate.y %= this.canvasWidth;
       } else {
         coordinate.y += Math.random() * (this.HI_COORD_MUT_UB * coordinate.y - this.HI_COORD_MUT_LB * coordinate.y) + this.HI_COORD_MUT_LB * coordinate.y;
@@ -116,14 +117,14 @@ class DNA {
     
     if (pr === 2) {
       if (color.r) {
-        color.r *= Math.random() * (this.LO_COLOR_MUT_UB * color.r - this.LO_COLOR_MUT_LB * color.r) + this.LO_COLOR_MUT_LB * color.r;
+        color.r = Math.random() * (this.LO_COLOR_MUT_UB * color.r - this.LO_COLOR_MUT_LB * color.r) + this.LO_COLOR_MUT_LB * color.r;
         color.r %= 255;
       } else {
         color.r += Math.floor(Math.random() * (12 + 1));
       }
     } else if (pr === 3) {
       if (color.r) {
-        color.r *= Math.random() * (this.HI_COLOR_MUT_UB * color.r - this.HI_COLOR_MUT_LB * color.r) + this.HI_COLOR_MUT_LB * color.r;
+        color.r = Math.random() * (this.HI_COLOR_MUT_UB * color.r - this.HI_COLOR_MUT_LB * color.r) + this.HI_COLOR_MUT_LB * color.r;
         color.r %= 255;
       } else {
         color.r += Math.floor(Math.random() * (12 + 1));
@@ -131,14 +132,14 @@ class DNA {
     }
     if (pg === 2) {
       if (color.g) {
-        color.g *= Math.random() * (this.LO_COLOR_MUT_UB * color.g - this.LO_COLOR_MUT_LB * color.g) + this.LO_COLOR_MUT_LB * color.g;
+        color.g = Math.random() * (this.LO_COLOR_MUT_UB * color.g - this.LO_COLOR_MUT_LB * color.g) + this.LO_COLOR_MUT_LB * color.g;
         color.g %= 255;
       } else {
         color.g += Math.floor(Math.random() * (12 + 1));
       }
     } else if (pg === 3) {
       if (color.g) {
-        color.g *= Math.random() * (this.HI_COLOR_MUT_UB * color.g - this.HI_COLOR_MUT_LB * color.g) + this.HI_COLOR_MUT_LB * color.g;
+        color.g = Math.random() * (this.HI_COLOR_MUT_UB * color.g - this.HI_COLOR_MUT_LB * color.g) + this.HI_COLOR_MUT_LB * color.g;
         color.g %= 255;
       } else {
         color.g += Math.floor(Math.random() * (12 + 1));
@@ -146,19 +147,22 @@ class DNA {
     }
     if (pb === 2) {
       if (color.b) {
-        color.b *= Math.random() * (this.LO_COLOR_MUT_UB * color.b - this.LO_COLOR_MUT_LB * color.b) + this.LO_COLOR_MUT_LB * color.b;
+        color.b = Math.random() * (this.LO_COLOR_MUT_UB * color.b - this.LO_COLOR_MUT_LB * color.b) + this.LO_COLOR_MUT_LB * color.b;
         color.b %= 255;
       } else {
         color.b += Math.floor(Math.random() * (12 + 1));
       }
     } else if (pb === 3) {
       if (color.b) {
-        color.b *= Math.random() * (this.HI_COLOR_MUT_UB * color.b - this.HI_COLOR_MUT_LB * color.b) + this.HI_COLOR_MUT_LB * color.b;
+        color.b = Math.random() * (this.HI_COLOR_MUT_UB * color.b - this.HI_COLOR_MUT_LB * color.b) + this.HI_COLOR_MUT_LB * color.b;
         color.b %= 255;
       } else {
         color.b += Math.floor(Math.random() * (12 + 1));
       }
     }
+    color.r = Math.floor(color.r);
+    color.b = Math.floor(color.b);
+    color.g = Math.floor(color.g);
   }
 
   mutateNumberOfVertices (polygon) {
@@ -186,11 +190,16 @@ class DNA {
     
   }
 
-  render(fileName, projectName) {
-    //create canvas
-    let canvas = new Canvas(this.canvasWidth, this.canvasHeight);
-    var ctx = canvas.getContext('2d');
+  render(fileName, projectName, ctx) {
+    //create canvas if none exists
+    if (ctx === undefined) {
+      var canvas = new Canvas(this.canvasWidth, this.canvasHeight);
+      ctx = canvas.getContext('2d');
+    }
 
+    ctx.fillStyle = 'rgba(0,0,0,1)';
+    ctx.fillRect(0,0,this.canvasWidth, this.canvasHeight);
+    
     //iterate through polygons
     this.polygons.forEach(polygon => {
       //set polygon color
@@ -205,28 +214,32 @@ class DNA {
       ctx.fill();
     });
 
-    //output to generated_image.png
-    var dir  = __dirname + `/${projectName}`;
+    return new Promise((resolve) => {
+      //output to generated_image.png
+      var dir  = __dirname + `/${projectName}`;
 
-    if (!fs.existsSync(dir)){
-      fs.mkdirSync(dir);
-    }
+      if (!fs.existsSync(dir)){
+        fs.mkdirSync(dir);
+      }
 
-    // let imageData = canvas.toDataURL().split(';base64,').pop();
+      // let imageData = canvas.toDataURL().split(';base64,').pop();
 
-    // fs.writeFileSync(dir + `/${fileName}.png`, imageData, {encoding: 'base64'});
+      // fs.writeFileSync(dir + `/${fileName}.png`, imageData, {encoding: 'base64'});
 
 
-    var out = fs.createWriteStream(dir + `/${fileName}.png`);
-    var stream = canvas.pngStream();
+      var out = fs.createWriteStream(dir + `/${fileName}.png`);
+      var stream = ctx.canvas.pngStream();
 
-    stream.on('data', function(chunk){
-      out.write(chunk);
+      stream.on('data', function(chunk){
+        out.write(chunk);
+      });
+      
+      stream.on('end', function(){
+        // ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height);
+        resolve(ctx);
+      });
     });
     
-    stream.on('end', function(){
-
-    });
   }
 
   clone() {

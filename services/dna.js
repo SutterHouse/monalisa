@@ -1,6 +1,7 @@
 const Canvas = require('canvas');
 const fs = require('fs');
 const Promise = require('bluebird');
+const gaussian = require('gaussian');
 
 class DNA {
   constructor(numberOfPolygons, canvasWidth, canvasHeight) {
@@ -10,16 +11,7 @@ class DNA {
 
     this.DEFAULT_NUMBER_OF_VERTICES = 5;
     this.DEFAULT_POLYGON_ALPHA = 0.5;
-
-    this.LO_COORD_MUT_LB = .95;
-    this.LO_COORD_MUT_UB = 1.05;
-    this.HI_COORD_MUT_LB = .90;
-    this.HI_COORD_MUT_UB = 1.10;
-    
-    this.LO_COLOR_MUT_LB = .95;
-    this.LO_COLOR_MUT_UB = 1.05;
-    this.HI_COLOR_MUT_LB = .90;
-    this.HI_COLOR_MUT_UB = 1.10;
+    this.PROBABILITY_OF_MUTATION = 0.35;
 
     this.polygons = [];
 
@@ -74,100 +66,47 @@ class DNA {
     return { r, g, b };
   }
 
-  mutateCoordinate(coordinate) {
-    let px = Math.floor(Math.random() * (3 + 1));
-    let py = Math.floor(Math.random() * (3 + 1));
+  mutateValue (original, min, max, isInteger = false) {
+    if (original < min || original > max) {
+      return null;
+    }
+    //should mutation occur?
+    var p = Math.random();
+    var result = original;
+    if (p <= this.PROBABILITY_OF_MUTATION) {
+      //choose perturbation from a normal dist and apply to original value
+      var dist = gaussian(0, 100);
+      var perturbation = dist.ppf(Math.random());
+      result += perturbation;
+    }
 
-    if (px === 2) {
-      if (coordinate.x) {
-        coordinate.x = Math.random() * (this.LO_COORD_MUT_UB * coordinate.x - this.LO_COORD_MUT_LB * coordinate.x) + this.LO_COORD_MUT_LB * coordinate.x;
-        coordinate.x %= this.canvasWidth;
-      } else {
-        coordinate.x += Math.random() * (this.LO_COORD_MUT_UB * coordinate.x - this.LO_COORD_MUT_LB * coordinate.x) + this.LO_COORD_MUT_LB * coordinate.x;
-      }
-    } else if (px === 3) {
-      if (coordinate.x) {
-        coordinate.x = Math.random() * (this.HI_COORD_MUT_UB * coordinate.x - this.HI_COORD_MUT_LB * coordinate.x) + this.HI_COORD_MUT_LB * coordinate.x;
-        coordinate.x %= this.canvasWidth;
-      } else {
-        coordinate.x += Math.random() * (this.HI_COORD_MUT_UB * coordinate.x - this.HI_COORD_MUT_LB * coordinate.x) + this.HI_COORD_MUT_LB * coordinate.x;
-      }
+    //check if result is invalid, try again if so
+    if (result < min || result > max) {
+      return this.mutateValue(original, min, max, isInteger);
     }
-    if (py === 2) {
-      if (coordinate.y) {
-        coordinate.y = Math.random() * (this.LO_COORD_MUT_UB * coordinate.y - this.LO_COORD_MUT_LB * coordinate.y) + this.LO_COORD_MUT_LB * coordinate.y;
-        coordinate.y %= this.canvasWidth;
-      } else {
-        coordinate.y += Math.random() * (this.LO_COORD_MUT_UB * coordinate.y - this.LO_COORD_MUT_LB * coordinate.y) + this.LO_COORD_MUT_LB * coordinate.y;
-      }
-    } else if (py === 3) {
-      if (coordinate.y) {
-        coordinate.y = Math.random() * (this.HI_COORD_MUT_UB * coordinate.y - this.HI_COORD_MUT_LB * coordinate.y) + this.HI_COORD_MUT_LB * coordinate.y;
-        coordinate.y %= this.canvasWidth;
-      } else {
-        coordinate.y += Math.random() * (this.HI_COORD_MUT_UB * coordinate.y - this.HI_COORD_MUT_LB * coordinate.y) + this.HI_COORD_MUT_LB * coordinate.y;
-      }
+
+    //convert to integer if necessary
+    if (isInteger) {
+      result = Math.floor(result);
     }
+
+    return result;
+  }
+
+  mutateCoordinate(coordinate) {
+    coordinate.x = this.mutateValue(coordinate.x, 0, this.canvasWidth);
+    coordinate.y = this.mutateValue(coordinate.y, 0, this.canvasHeight);
   }
 
   mutateColor(color) {
-    let pr = Math.floor(Math.random() * (3 + 1));
-    let pg = Math.floor(Math.random() * (3 + 1));
-    let pb = Math.floor(Math.random() * (3 + 1));
-    
-    if (pr === 2) {
-      if (color.r) {
-        color.r = Math.random() * (this.LO_COLOR_MUT_UB * color.r - this.LO_COLOR_MUT_LB * color.r) + this.LO_COLOR_MUT_LB * color.r;
-        color.r %= 255;
-      } else {
-        color.r += Math.floor(Math.random() * (12 + 1));
-      }
-    } else if (pr === 3) {
-      if (color.r) {
-        color.r = Math.random() * (this.HI_COLOR_MUT_UB * color.r - this.HI_COLOR_MUT_LB * color.r) + this.HI_COLOR_MUT_LB * color.r;
-        color.r %= 255;
-      } else {
-        color.r += Math.floor(Math.random() * (12 + 1));
-      }
-    }
-    if (pg === 2) {
-      if (color.g) {
-        color.g = Math.random() * (this.LO_COLOR_MUT_UB * color.g - this.LO_COLOR_MUT_LB * color.g) + this.LO_COLOR_MUT_LB * color.g;
-        color.g %= 255;
-      } else {
-        color.g += Math.floor(Math.random() * (12 + 1));
-      }
-    } else if (pg === 3) {
-      if (color.g) {
-        color.g = Math.random() * (this.HI_COLOR_MUT_UB * color.g - this.HI_COLOR_MUT_LB * color.g) + this.HI_COLOR_MUT_LB * color.g;
-        color.g %= 255;
-      } else {
-        color.g += Math.floor(Math.random() * (12 + 1));
-      }
-    }
-    if (pb === 2) {
-      if (color.b) {
-        color.b = Math.random() * (this.LO_COLOR_MUT_UB * color.b - this.LO_COLOR_MUT_LB * color.b) + this.LO_COLOR_MUT_LB * color.b;
-        color.b %= 255;
-      } else {
-        color.b += Math.floor(Math.random() * (12 + 1));
-      }
-    } else if (pb === 3) {
-      if (color.b) {
-        color.b = Math.random() * (this.HI_COLOR_MUT_UB * color.b - this.HI_COLOR_MUT_LB * color.b) + this.HI_COLOR_MUT_LB * color.b;
-        color.b %= 255;
-      } else {
-        color.b += Math.floor(Math.random() * (12 + 1));
-      }
-    }
-    color.r = Math.floor(color.r);
-    color.b = Math.floor(color.b);
-    color.g = Math.floor(color.g);
+    color.r = this.mutateValue(color.r, 0, 255, true);
+    color.g = this.mutateValue(color.g, 0, 255, true);
+    color.b = this.mutateValue(color.b, 0, 255, true);
   }
 
   mutateNumberOfVertices (polygon) {
     var pMutate = Math.random();
-    if (pMutate < 0.05) {
+    if (pMutate < this.PROBABILITY_OF_MUTATION) {
       var pAdd = Math.random();
       if (pAdd >= 0.5) {
         this.addVertex(polygon);

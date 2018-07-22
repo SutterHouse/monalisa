@@ -161,11 +161,6 @@ class DNA {
         fs.mkdirSync(dir);
       }
 
-      // let imageData = canvas.toDataURL().split(';base64,').pop();
-
-      // fs.writeFileSync(dir + `/${fileName}.png`, imageData, {encoding: 'base64'});
-
-
       var out = fs.createWriteStream(dir + `/${fileName}.png`);
       var stream = ctx.canvas.pngStream();
 
@@ -174,7 +169,6 @@ class DNA {
       });
       
       stream.on('end', function(){
-        // ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height);
         resolve(ctx);
       });
     });
@@ -200,7 +194,3 @@ class DNA {
 
 
 module.exports = DNA;
-
-
-var dna = new DNA(50, 200, 200);
-dna.render(1, 'test');

@@ -2,7 +2,7 @@ var DNA = require('./services/dna.js');
 var imageDiff = require('./services/imageDiff.js');
 var fs = require('fs');
 
-var NUMBER_OF_EPOCHS = -1;
+var NUMBER_OF_EPOCHS = 100;
 var projectName = 'test';
 var sourceImageDir = __dirname + '/spec/compareImages/raptor.png';
 var changeCounter = 1;
@@ -24,12 +24,10 @@ var nextCanvas = (dna1Score) => {
       console.log('Diff: ', dna2Score);
       console.log('Count: ', i);
       //found a better match
-      dna1 = dna2;
-      dna1Score = dna2Score;
-      dna1.render(changeCounter, projectName, canvasContext).then(() => {
+      dna2.render(changeCounter, projectName, canvasContext).then(() => {
         changeCounter++;
         i++;
-        nextCanvas(dna1Score);
+        nextCanvas(dna2Score);
       });
       
     } else {

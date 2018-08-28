@@ -7,7 +7,6 @@ var epochIdx = 0;
 
 //initialize gene pool
 var genePool = new GenePool();
-console.log("READY")
 genePool.renderDnas(genePool.dnas)
   .then(() => genePool.calculateDiffs(genePool.dnas))
   .then(() => {
@@ -21,6 +20,9 @@ var advanceEpoch = () => {
   if (epochIdx === numberOfEpochs) {
     return;
   }
+  if (epochIdx % config.LOG_EVERY_X_EPOCHS === 0) {
+    console.log(epochIdx, genePool.dnas.map(dna => dna.diffScore));
+  }
 
   var children = genePool.mateAllTopDna();
   genePool.renderDnas(children)
@@ -29,7 +31,7 @@ var advanceEpoch = () => {
       children.forEach(child => genePool.dnas.push(child));
       genePool.rankAllByDiff();
       genePool.cullAll();
-      genePool.mutateAll();
+      // genePool.mutateAll();
       return genePool.renderFittest(++epochIdx);
     })
     .then(() => advanceEpoch());

@@ -27,10 +27,9 @@ module.exports = class GenePool {
     var promiseArray = [];
     dnas.forEach((dna, index) => {
       promiseArray.push(
-        imageDiff(config.sourceImage.DIR, `./${config.PROJECT_NAME}/temp_${index}.png`)
+        imageDiff(config.sourceImage.DIR, `./services/${config.PROJECT_NAME}/temp_${index}.png`)
           .then(score => {
             dna.diffScore = score;
-            console.log('score');
           })
       );
     });

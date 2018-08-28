@@ -1,6 +1,7 @@
 module.exports = {
   PROJECT_NAME: 'test',
-  NUMBER_OF_EPOCHS: 100,
+  NUMBER_OF_EPOCHS: 10000,
+  LOG_EVERY_X_EPOCHS: 100,
   dna: {
     NUMBER_OF_POLYGONS: 50,
     CANVAS_WIDTH: 383,

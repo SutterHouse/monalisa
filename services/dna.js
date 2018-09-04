@@ -16,7 +16,7 @@ class DNA {
     this.PROBABILITY_OF_MUTATION = config.dna.PROBABILITY_OF_MUTATION;
 
     this.polygons = [];
-
+    this.diffScore = null;
   }
 
   populate() {
@@ -157,7 +157,7 @@ class DNA {
 
     return new Promise((resolve) => {
       //output to generated_image.png
-      var dir  = __dirname + `/${config.PROJECT_NAME}`;
+      var dir  = __dirname + `/../${config.PROJECT_NAME}`;
 
       if (!fs.existsSync(dir)){
         fs.mkdirSync(dir);

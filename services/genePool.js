@@ -12,22 +12,21 @@ module.exports = class GenePool {
       dna.populate();
       this.dnas.push(dna);
     }
-
   }
 
-  renderDnas (dnas) { // async
+  renderDnas () { // async
     var promiseArray = [];
-    dnas.forEach((dna, index) => {
+    this.dnas.forEach((dna, index) => {
       promiseArray.push(dna.render(`temp_${index}`));
     });
     return Promise.all(promiseArray);
   }
 
-  calculateDiffs (dnas) { // async
+  calculateDiffs () { // async
     var promiseArray = [];
-    dnas.forEach((dna, index) => {
+    this.dnas.forEach((dna, index) => {
       promiseArray.push(
-        imageDiff(config.sourceImage.DIR, `./services/${config.PROJECT_NAME}/temp_${index}.png`)
+        imageDiff(config.sourceImage.DIR, `./${config.PROJECT_NAME}/temp_${index}.png`)
           .then(score => {
             dna.diffScore = score;
           })
@@ -47,23 +46,31 @@ module.exports = class GenePool {
     for (var i = 0; i < dna1.polygons.length; i++) {
       var p = Math.random();
       if (p < 0.5) {
-        child.polygons[i] = dna1.polygons[i];
+        child.polygons[i] = {};
+        child.polygons[i].color = Object.assign({}, dna1.polygons[i].color);
+        child.polygons[i].coordinates = dna1.polygons[i].coordinates.map((coordinate) => {
+          return Object.assign({}, coordinate);
+        });
       } else {
-        child.polygons[i] = dna2.polygons[i];
+        child.polygons[i] = {};
+        child.polygons[i].color = Object.assign({}, dna2.polygons[i].color);
+        child.polygons[i].coordinates = dna2.polygons[i].coordinates.map((coordinate) => {
+          return Object.assign({}, coordinate);
+        });
       }
     }
     return child;
   }
 
-  mateAllTopDna () {
+  initiateMatingSeason () {
     var topIndex = Math.floor(this.dnas.length * config.genePool.MATING_PERCENTAGE);
-    var children = [];
     for (var i = 0; i < topIndex - 1; i++) {
-      for (var j = i + 1; j < topIndex; j++) {
-        children.push(this.mate(this.dnas[i], this.dnas[j]));
+      let j = i;
+      while(j === i) {
+        j = Math.floor(Math.random() * this.popSize);
       }
+      this.dnas.push(this.mate(this.dnas[i], this.dnas[j]));
     }
-    return children;
   }
 
   cullAll () {
@@ -79,6 +86,16 @@ module.exports = class GenePool {
         dna.mutate();
       }
     })
+  }
+
+  introduceImmigrants () {
+    const numberOfImmigrants = Math.floor(this.popSize * config.dna.IMMIGRANTS_PER_EPOCH);
+
+    for (let i = 0; i < numberOfImmigrants; i++) {
+      const dna = new DNA();
+      dna.populate();
+      this.dnas.push(dna);
+    }
   }
 
   renderFittest (fileName) {

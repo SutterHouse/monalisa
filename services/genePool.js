@@ -3,11 +3,12 @@ const imageDiff = require('./imageDiff')
 const config = require('./config');
 //const Promise = require('bluebird');
 
+const POPULATION_SIZE = config.genePool.POPULATION_SIZE;
+
 module.exports = class GenePool {
   constructor() {
-    this.popSize = config.genePool.POPULATION_SIZE;
     this.dnas = [];
-    for (var i = 0; i < this.popSize; i++) {
+    for (var i = 0; i < POPULATION_SIZE; i++) {
       var dna = new DNA();
       dna.populate();
       this.dnas.push(dna);
@@ -67,14 +68,30 @@ module.exports = class GenePool {
     for (var i = 0; i < topIndex - 1; i++) {
       let j = i;
       while(j === i) {
-        j = Math.floor(Math.random() * this.popSize);
+        j = Math.floor(Math.random() * this.dnas.length);
       }
       this.dnas.push(this.mate(this.dnas[i], this.dnas[j]));
     }
   }
 
+  incrementAges () {
+    this.dnas.forEach((dna) => {
+      dna.age++;
+    })
+  }
+
+  reapTheElderly() {
+    var newDnas = [];
+    this.dnas.forEach((dna) => {
+      if (dna.age < config.dna.MAX_AGE) {
+        newDnas.push(dna);
+      }
+    });
+    this.dnas = newDnas;
+  }
+
   cullAll () {
-    while (this.dnas.length > this.popSize) {
+    while (this.dnas.length > POPULATION_SIZE) {
       delete this.dnas.pop();
     }
   }
@@ -89,7 +106,7 @@ module.exports = class GenePool {
   }
 
   introduceImmigrants () {
-    const numberOfImmigrants = Math.floor(this.popSize * config.dna.IMMIGRANTS_PER_EPOCH);
+    const numberOfImmigrants = Math.floor(POPULATION_SIZE * config.dna.IMMIGRANTS_PER_EPOCH);
 
     for (let i = 0; i < numberOfImmigrants; i++) {
       const dna = new DNA();

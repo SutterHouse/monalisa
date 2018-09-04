@@ -17,6 +17,7 @@ class DNA {
 
     this.polygons = [];
     this.diffScore = null;
+    this.age = 0;
   }
 
   populate() {

@@ -1,6 +1,7 @@
 const DNA = require('./dna');
 const imageDiff = require('./imageDiff')
 const config = require('./config');
+const fs = require('fs');
 //const Promise = require('bluebird');
 
 const POPULATION_SIZE = config.genePool.POPULATION_SIZE;
@@ -26,12 +27,18 @@ module.exports = class GenePool {
   calculateDiffs () { // async
     var promiseArray = [];
     this.dnas.forEach((dna, index) => {
-      promiseArray.push(
-        imageDiff(config.sourceImage.DIR, `./${config.PROJECT_NAME}/temp_${index}.png`)
-          .then(score => {
-            dna.diffScore = score;
-          })
-      );
+      const path = `./${config.PROJECT_NAME}/temp_${index}.png`;
+      if (fs.existsSync(path) && fs.existsSync(config.sourceImage.DIR)) {
+        promiseArray.push(
+          imageDiff(config.sourceImage.DIR, path)
+            .then(score => {
+              dna.diffScore = score;
+            })
+        );
+      } else {
+        console.error('source image exists:', fs.existsSync(config.sourceImage.DIR));
+        console.error('target image exists:', fs.existsSync(path));
+      }
     });
     return Promise.all(promiseArray);
   }

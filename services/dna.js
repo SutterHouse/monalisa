@@ -40,9 +40,6 @@ class DNA {
     }
   }
   
-  //Edge cases to address:
-  //  x or y mutation can go past image boundary
-  //  0 values cannot be mutated
   mutate() {
     this.polygons.forEach((polygon) => {
       polygon.coordinates.forEach((coordinate) => {
@@ -51,7 +48,7 @@ class DNA {
 
       this.mutateColor(polygon.color);
 
-      this.mutateNumberOfVertices(polygon);
+      // this.mutateNumberOfVertices(polygon);
     });
   }
 

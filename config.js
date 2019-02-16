@@ -8,6 +8,7 @@ module.exports = {
     mutationProbability: 0.1,
     immigrantsPerEpoch: 0.2,
     polygonMaxAge: 10,
+    polygonAlpha: 0.3
   },
   genePool: {
     populationSize: 50,

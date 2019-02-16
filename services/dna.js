@@ -1,4 +1,4 @@
-const Canvas = require('canvas');
+const { createCanvas } = require('canvas');
 const fs = require('fs');
 const gaussian = require('gaussian');
 const _ = require('lodash');
@@ -7,10 +7,12 @@ var config = require('../config.js');
 
 class DNA {
   constructor() {
-    this.polygons = _.times(config.polygonCount, () => ({
-      coordinates: _.times(config.vertexCount, this.createVertex),
-      color: this.createColor(),
-    }));
+    this.polygons = _.times(config.dna.polygonCount, () => {
+      return {
+        coordinates: _.times(config.dna.vertexCount, this.createVertex),
+        color: this.createColor(),
+      };
+    });
     this.canvas = null;
     this.diffScore = null;
     this.age = 0;
@@ -44,7 +46,7 @@ class DNA {
     // should mutation occur?
     const p = Math.random();
     let result = original;
-    if (p <= config.mutationProbability) {
+    if (p <= config.dna.mutationProbability) {
       // choose perturbation from a normal dist and apply to original value
       
       // we want most mutations to fall between min and max
@@ -81,7 +83,7 @@ class DNA {
 
   mutateNumberOfVertices (polygon) {
     var pMutate = Math.random();
-    if (pMutate < config.mutationProbability) {
+    if (pMutate < config.dna.mutationProbability) {
       var pAdd = Math.random();
       if (pAdd >= 0.5) {
         this.addVertex(polygon);
@@ -113,15 +115,16 @@ class DNA {
   renderToCanvas() {
     // create canvas if none exists
     if (!this.canvas) {
-      this.canvas = new Canvas(config.image.width, config.image.height);
-      ctx = canvas.getContext('2d');
+      this.canvas = createCanvas(config.image.width, config.image.height);
     }
+
+    const ctx = this.canvas.getContext('2d');
 
     ctx.fillStyle = 'rgba(0,0,0,1)';
     ctx.fillRect(0, 0, config.image.width, config.image.height);
     
-    this.polygons.forEach(polygon => {
-      ctx.fillStyle = `rgba(${polygon.color.r}, ${polygon.color.g}, ${polygon.color.b}, ${this.POLYGON_ALPHA})`;
+    this.polygons.forEach((polygon, idx) => {
+      ctx.fillStyle = `rgba(${polygon.color.r}, ${polygon.color.g}, ${polygon.color.b}, ${config.dna.polygonAlpha})`;
       ctx.beginPath();
       ctx.moveTo(polygon.coordinates[0].x, polygon.coordinates[0].y);
       for (var i = 1; i < polygon.coordinates.length; i++) {
@@ -132,13 +135,20 @@ class DNA {
     });
   }
 
+  getPixelData() {
+    if (this.canvas) {
+      const ctx = this.canvas.getContext('2d');
+      return ctx.getImageData(0, 0, config.image.width, config.image.height).data;
+    }
+  }
+
   writeCanvastoPNG(fileName) {
     if (!this.canvas) {
       return undefined;
     }
 
     return new Promise((resolve) => {
-      var dir = `../${config.projectName}`;
+      var dir = `./projects/${config.projectName}`;
 
       if (!fs.existsSync(dir)){
         fs.mkdirSync(dir);
@@ -158,7 +168,4 @@ class DNA {
   }
 
 }
-const dna = new DNA();
-dna.renderToCanvas();
-dna.writeCanvastoPNG();
 module.exports = DNA;

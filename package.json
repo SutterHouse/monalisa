@@ -1,7 +1,8 @@
 {
   "dependencies": {
-    "canvas": "^1.6.11",
+    "canvas": "^2.3.1",
     "gaussian": "^1.1.0",
+    "lodash": "^4.17.11",
     "png-js": "^0.1.1"
   },
   "name": "monalisa",

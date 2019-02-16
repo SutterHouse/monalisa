@@ -1,6 +1,9 @@
 test
 temp
 
+archive/
+compareImages/
+
 # Logs
 logs
 *.log

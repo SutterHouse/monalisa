@@ -2,11 +2,10 @@ const DNA = require('./dna');
 const imageDiff = require('./imageDiff')
 const config = require('./config');
 const fs = require('fs');
-//const Promise = require('bluebird');
 
 const POPULATION_SIZE = config.genePool.POPULATION_SIZE;
 
-module.exports = class GenePool {
+class GenePool {
   constructor() {
     this.dnas = [];
     for (var i = 0; i < POPULATION_SIZE; i++) {
@@ -127,3 +126,5 @@ module.exports = class GenePool {
   }
 
 };
+
+module.exports = GenePool;

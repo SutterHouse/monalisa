@@ -6,13 +6,15 @@ const _ = require('lodash');
 var config = require('../config.js');
 
 class DNA {
-  constructor() {
-    this.polygons = _.times(config.dna.polygonCount, () => {
-      return {
+  constructor(populate = true) {
+    if (populate) {
+      this.polygons = _.times(config.dna.polygonCount, () => ({
         coordinates: _.times(config.dna.vertexCount, this.createVertex),
         color: this.createColor(),
-      };
-    });
+      }));
+    } else {
+      this.polygons = [];
+    }
     this.canvas = null;
     this.diffScore = null;
     this.age = 0;
@@ -26,6 +28,7 @@ class DNA {
 
       this.mutateColor(polygon.color);
 
+      // let's leave this out until there's a good reason for it
       // this.mutateNumberOfVertices(polygon);
     });
   }
@@ -168,4 +171,5 @@ class DNA {
   }
 
 }
+
 module.exports = DNA;

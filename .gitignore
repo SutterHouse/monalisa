@@ -5,6 +5,8 @@ archive/
 projects/
 compareImages/
 
+.vscode
+
 # Logs
 logs
 *.log

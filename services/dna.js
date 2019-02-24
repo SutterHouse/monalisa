@@ -6,18 +6,32 @@ const _ = require('lodash');
 var config = require('../config.js');
 
 class DNA {
-  constructor(populate = true) {
-    if (populate) {
-      this.polygons = _.times(config.dna.polygonCount, () => ({
-        coordinates: _.times(config.dna.vertexCount, this.createVertex),
-        color: this.createColor(),
-      }));
-    } else {
-      this.polygons = [];
-    }
+  constructor() {
+    // config vars
+    this.dnaPolygonCount = config.dna.polygonCount;
+    this.dnaVertexCount = config.dna.vertexCount;
+    this.imageWidth = config.image.width;
+    this.imageHeight = config.image.height;
+    this.dnaMutationProbability = config.dna.mutationProbability;
+    this.dnaPolygonAlpha = config.dna.polygonAlpha;
+    this.projectName = config.projectName;
+
+    // mutable vars
+    this.polygons = [];
     this.canvas = null;
     this.diffScore = null;
     this.age = 0;
+
+  }
+
+  populate() {
+    this.polygons = _.times(this.dnaPolygonCount, () => ({
+      coordinates: _.times(this.dnaVertexCount, this.createVertex.bind(this)),
+      color: this.createColor(),
+    }));
+    
+    // so that we can create a new populated DNA via `new DNA().populate()`
+    return this;
   }
   
   mutate() {
@@ -28,13 +42,13 @@ class DNA {
 
       this.mutateColor(polygon.color);
 
-      // let's leave this out until there's a good reason for it
+      // let's leave this out until there's a good reason for it:
       // this.mutateNumberOfVertices(polygon);
     });
   }
 
   createVertex() {
-    return { x: _.random(config.image.width), y: _.random(config.image.height) };
+    return { x: _.random(this.imageWidth), y: _.random(this.imageHeight) };
   }
 
   createColor() {
@@ -49,7 +63,7 @@ class DNA {
     // should mutation occur?
     const p = Math.random();
     let result = original;
-    if (p <= config.dna.mutationProbability) {
+    if (p <= this.dnaMutationProbability) {
       // choose perturbation from a normal dist and apply to original value
       
       // we want most mutations to fall between min and max
@@ -74,8 +88,8 @@ class DNA {
   }
 
   mutateCoordinate(coordinate) {
-    coordinate.x = this.mutateValue(coordinate.x, 0, config.image.width);
-    coordinate.y = this.mutateValue(coordinate.y, 0, config.image.height);
+    coordinate.x = this.mutateValue(coordinate.x, 0, this.imageWidth);
+    coordinate.y = this.mutateValue(coordinate.y, 0, this.imageHeight);
   }
 
   mutateColor(color) {
@@ -86,7 +100,7 @@ class DNA {
 
   mutateNumberOfVertices (polygon) {
     var pMutate = Math.random();
-    if (pMutate < config.dna.mutationProbability) {
+    if (pMutate < this.dnaMutationProbability) {
       var pAdd = Math.random();
       if (pAdd >= 0.5) {
         this.addVertex(polygon);
@@ -111,23 +125,23 @@ class DNA {
   clearCanvas() {
     if (this.canvas) {
       const ctx = this.canvas.getContext('2d');
-      ctx.clearRect(0, 0, config.image.width, config.image.height);
+      ctx.clearRect(0, 0, this.imageWidth, this.imageHeight);
     }
   }
 
   renderToCanvas() {
     // create canvas if none exists
     if (!this.canvas) {
-      this.canvas = createCanvas(config.image.width, config.image.height);
+      this.canvas = createCanvas(this.imageWidth, this.imageHeight);
     }
 
     const ctx = this.canvas.getContext('2d');
 
     ctx.fillStyle = 'rgba(0,0,0,1)';
-    ctx.fillRect(0, 0, config.image.width, config.image.height);
+    ctx.fillRect(0, 0, this.imageWidth, this.imageHeight);
     
     this.polygons.forEach((polygon, idx) => {
-      ctx.fillStyle = `rgba(${polygon.color.r}, ${polygon.color.g}, ${polygon.color.b}, ${config.dna.polygonAlpha})`;
+      ctx.fillStyle = `rgba(${polygon.color.r}, ${polygon.color.g}, ${polygon.color.b}, ${this.dnaPolygonAlpha})`;
       ctx.beginPath();
       ctx.moveTo(polygon.coordinates[0].x, polygon.coordinates[0].y);
       for (var i = 1; i < polygon.coordinates.length; i++) {
@@ -141,17 +155,17 @@ class DNA {
   getPixelData() {
     if (this.canvas) {
       const ctx = this.canvas.getContext('2d');
-      return ctx.getImageData(0, 0, config.image.width, config.image.height).data;
+      return ctx.getImageData(0, 0, this.imageWidth, this.imageHeight).data;
     }
   }
 
-  writeCanvastoPNG(fileName) {
+  writeCanvasToPNG(fileName) {
     if (!this.canvas) {
       return undefined;
     }
 
     return new Promise((resolve) => {
-      var dir = `./projects/${config.projectName}`;
+      var dir = `./projects/${this.projectName}`;
 
       if (!fs.existsSync(dir)){
         fs.mkdirSync(dir);

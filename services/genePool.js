@@ -7,10 +7,17 @@ const config = require('../config');
 
 class GenePool {
   constructor() {
-    this.dnas = _.times(config.genePool.populationSize, () => (new DNA()));
+    // config vars
+    this.genePoolPopulationSize = config.genePool.populationSize;
+    this.genePoolMatingProbability = config.genePool.matingProbability;
+    this.genePoolMaxAge = config.genePool.maxAge;
+    this.genePoolImmigrantsPerEpoch = config.genePool.immigrantsPerEpoch;
+
+    // mutable vars
+    this.dnas = _.times(this.genePoolPopulationSize, () => new DNA().populate());
   }
 
-  getSourceImagePixels() {
+  getSourceImagePixels() {  // async
     return getSourceImagePixels().then((pixelArr) => {
       this.sourceImagePixels = pixelArr;
     })
@@ -28,14 +35,14 @@ class GenePool {
     });
   }
 
-  rankAllByDiff () {
+  sortDnasByDiff () {
     this.dnas.sort((dna1, dna2) => {
       return dna1.diffScore - dna2.diffScore;
     })
   }
 
   mate (dna1, dna2) {
-    var child = new DNA(false);
+    var child = new DNA();
     for (var i = 0; i < dna1.polygons.length; i++) {
       var p = Math.random();
       if (p < 0.5) {
@@ -51,7 +58,7 @@ class GenePool {
     const children = [];
     for (var i = 0; i < this.dnas.length; i++) {
       for (var j = 0; j < this.dnas.length; j++) {
-        if (Math.random() < config.genePool.matingProbability) {
+        if (Math.random() < this.genePoolMatingProbability) {
           children.push(this.mate(this.dnas[i], this.dnas[j]))
         }
       }
@@ -67,12 +74,12 @@ class GenePool {
 
   reapTheElderly() {
     this.dnas = this.dnas.filter((dna) => {
-      return dna.age < config.dna.maxAge;
+      return dna.age <= this.genePoolMaxAge;
     });
   }
 
   cullAll () {
-    this.dnas = this.dnas.slice(0, config.genePool.populationSize);
+    this.dnas = this.dnas.slice(0, this.genePoolPopulationSize);
   }
 
   mutateAll () {
@@ -80,11 +87,11 @@ class GenePool {
   }
 
   introduceImmigrants () {
-    const numberOfImmigrants = Math.floor(config.genePool.populationSize * config.genePool.immigrantsPerEpoch);
-    this.dnas.push(..._.times(numberOfImmigrants, () => new DNA()));
+    const numberOfImmigrants = Math.floor(this.genePoolPopulationSize * this.genePoolImmigrantsPerEpoch);
+    this.dnas.push(..._.times(numberOfImmigrants, () => new DNA().populate()));
   }
 
-  renderFittest (fileName) {
+  writeFittestToFile (fileName) {
     return this.dnas[0].writeCanvasToPNG(fileName);
   }
 

@@ -16,11 +16,8 @@ const getSourceImagePixels = () => {
 // assumes that pixel arrays in same format
 const pixelDiff = (pixels1, pixels2) => {
   pixels1.reduce((score, current, idx) => {
-    if ((idx + 1) % 4 !== 0) { // every fourth element refers to alpha
-      return score + Math.abs(current - pixels2[idx]);
-    }
-    return 0;
-  }, 0)
+    return score + Math.abs(current - pixels2[idx]);
+  }, 0);
 };
 
 module.exports = { pixelDiff, getSourceImagePixels };

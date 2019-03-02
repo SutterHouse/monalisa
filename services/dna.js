@@ -1,43 +1,37 @@
-const Canvas = require('canvas');
+const { createCanvas } = require('canvas');
 const fs = require('fs');
-const Promise = require('bluebird');
 const gaussian = require('gaussian');
+const _ = require('lodash');
 
-var config = require('./config.js');
+var config = require('../config.js');
 
 class DNA {
   constructor() {
-    this.NUMBER_OF_POLYGONS = config.dna.NUMBER_OF_POLYGONS;
-    this.CANVAS_WIDTH = config.dna.CANVAS_WIDTH;
-    this.CANVAS_HEIGHT = config.dna.CANVAS_HEIGHT;
+    // config vars
+    this.dnaPolygonCount = config.dna.polygonCount;
+    this.dnaVertexCount = config.dna.vertexCount;
+    this.imageWidth = config.image.width;
+    this.imageHeight = config.image.height;
+    this.dnaMutationProbability = config.dna.mutationProbability;
+    this.dnaPolygonAlpha = config.dna.polygonAlpha;
+    this.projectName = config.projectName;
 
-    this.NUMBER_OF_VERTICES = config.dna.NUMBER_OF_VERTICES;
-    this.POLYGON_ALPHA = config.dna.POLYGON_ALPHA;
-    this.PROBABILITY_OF_MUTATION = config.dna.PROBABILITY_OF_MUTATION;
-
+    // mutable vars
     this.polygons = [];
+    this.canvas = null;
     this.diffScore = null;
     this.age = 0;
+
   }
 
   populate() {
-    for (var i = 0; i < this.NUMBER_OF_POLYGONS; i++) {
-      var polygon = {
-        coordinates: [],
-        color: {}
-      };
-
-      //add polygon coordinates
-      for (var j = 0; j < this.NUMBER_OF_VERTICES; j++) {
-        polygon.coordinates.push(this.createVertex());
-      }
-
-      //add polygon color
-      polygon.color = this.createColor();
-
-
-      this.polygons.push(polygon);
-    }
+    this.polygons = _.times(this.dnaPolygonCount, () => ({
+      coordinates: _.times(this.dnaVertexCount, this.createVertex.bind(this)),
+      color: this.createColor(),
+    }));
+    
+    // so that we can create a new populated DNA via `new DNA().populate()`
+    return this;
   }
   
   mutate() {
@@ -48,44 +42,44 @@ class DNA {
 
       this.mutateColor(polygon.color);
 
+      // let's leave this out until there's a good reason for it:
       // this.mutateNumberOfVertices(polygon);
     });
   }
 
   createVertex() {
-    var x = Math.floor(Math.random() * (this.CANVAS_WIDTH + 1));
-    var y = Math.floor(Math.random() * (this.CANVAS_HEIGHT + 1));
-    return { x, y };
+    return { x: _.random(this.imageWidth), y: _.random(this.imageHeight) };
   }
 
   createColor() {
-    var r = Math.floor(Math.random() * (255 + 1));
-    var g = Math.floor(Math.random() * (255 + 1));
-    var b = Math.floor(Math.random() * (255 + 1));
-
-    return { r, g, b };
+    return {
+      r: _.random(255),
+      g: _.random(255),
+      b: _.random(255),
+    };
   }
 
   mutateValue (original, min, max, isInteger = false) {
-    if (original < min || original > max) {
-      return null;
-    }
-    //should mutation occur?
-    var p = Math.random();
-    var result = original;
-    if (p <= this.PROBABILITY_OF_MUTATION) {
-      //choose perturbation from a normal dist and apply to original value
-      var dist = gaussian(0, 100);
-      var perturbation = dist.ppf(Math.random());
+    // should mutation occur?
+    const p = Math.random();
+    let result = original;
+    if (p <= this.dnaMutationProbability) {
+      // choose perturbation from a normal dist and apply to original value
+      
+      // we want most mutations to fall between min and max
+      // 98% of results are within 2 standard deviations of the mean
+      // so max - min represents a distance of 4 SDs
+      const variance =  Math.pow((max - min) / 4, 2)
+      var perturbation = gaussian(0, variance).ppf(Math.random());
       result += perturbation;
     }
 
-    //check if result is invalid, try again if so
+    // check if result is invalid, try again if so
     if (result < min || result > max) {
       return this.mutateValue(original, min, max, isInteger);
     }
 
-    //convert to integer if necessary
+    // convert to integer if necessary
     if (isInteger) {
       result = Math.floor(result);
     }
@@ -94,8 +88,8 @@ class DNA {
   }
 
   mutateCoordinate(coordinate) {
-    coordinate.x = this.mutateValue(coordinate.x, 0, this.CANVAS_WIDTH);
-    coordinate.y = this.mutateValue(coordinate.y, 0, this.CANVAS_HEIGHT);
+    coordinate.x = this.mutateValue(coordinate.x, 0, this.imageWidth);
+    coordinate.y = this.mutateValue(coordinate.y, 0, this.imageHeight);
   }
 
   mutateColor(color) {
@@ -106,7 +100,7 @@ class DNA {
 
   mutateNumberOfVertices (polygon) {
     var pMutate = Math.random();
-    if (pMutate < this.PROBABILITY_OF_MUTATION) {
+    if (pMutate < this.dnaMutationProbability) {
       var pAdd = Math.random();
       if (pAdd >= 0.5) {
         this.addVertex(polygon);
@@ -126,24 +120,28 @@ class DNA {
       var removalIndex = Math.floor(Math.random() * polygon.length);
       polygon.coordinates.splice(removalIndex, 1);
     }
-    
   }
 
-  render(fileName, ctx) {
-    //create canvas if none exists
-    if (ctx === undefined) {
-      var canvas = new Canvas(this.CANVAS_WIDTH, this.CANVAS_HEIGHT);
-      ctx = canvas.getContext('2d');
+  clearCanvas() {
+    if (this.canvas) {
+      const ctx = this.canvas.getContext('2d');
+      ctx.clearRect(0, 0, this.imageWidth, this.imageHeight);
+    }
+  }
+
+  renderToCanvas() {
+    // create canvas if none exists
+    if (!this.canvas) {
+      this.canvas = createCanvas(this.imageWidth, this.imageHeight);
     }
 
-    ctx.fillStyle = 'rgba(0,0,0,1)';
-    ctx.fillRect(0,0,this.CANVAS_WIDTH, this.CANVAS_HEIGHT);
-    
-    //iterate through polygons
-    this.polygons.forEach(polygon => {
-      //set polygon color
-      ctx.fillStyle = `rgba(${polygon.color.r}, ${polygon.color.g}, ${polygon.color.b}, ${this.POLYGON_ALPHA})`;
+    const ctx = this.canvas.getContext('2d');
 
+    ctx.fillStyle = 'rgba(0,0,0,1)';
+    ctx.fillRect(0, 0, this.imageWidth, this.imageHeight);
+    
+    this.polygons.forEach((polygon) => {
+      ctx.fillStyle = `rgba(${polygon.color.r}, ${polygon.color.g}, ${polygon.color.b}, ${this.dnaPolygonAlpha})`;
       ctx.beginPath();
       ctx.moveTo(polygon.coordinates[0].x, polygon.coordinates[0].y);
       for (var i = 1; i < polygon.coordinates.length; i++) {
@@ -152,45 +150,33 @@ class DNA {
       ctx.closePath();
       ctx.fill();
     });
+  }
 
-    return new Promise((resolve) => {
-      //output to generated_image.png
-      var dir  = __dirname + `/../${config.PROJECT_NAME}`;
+  getPixelData() {
+    if (this.canvas) {
+      const ctx = this.canvas.getContext('2d');
+      return [...ctx.getImageData(0, 0, this.imageWidth, this.imageHeight).data];
+    }
+  }
+
+  writeCanvasToPNG(fileName) {
+    if (!this.canvas) {
+      return undefined;
+    }
+
+    return new Promise((resolve, reject) => {
+      var dir = `./projects/${this.projectName}`;
 
       if (!fs.existsSync(dir)){
         fs.mkdirSync(dir);
       }
 
-      var out = fs.createWriteStream(dir + `/${fileName}.png`);
-      var stream = ctx.canvas.pngStream();
+      var buff = this.canvas.toBuffer();
 
-      stream.on('data', function(chunk){
-        out.write(chunk);
-      });
-      
-      stream.on('end', function(){
-        resolve(ctx);
-      });
+      fs.writeFileSync(dir + `/${fileName}.png`, buff, (err) => (err ? reject() : resolve()));
     });
-    
-  }
-
-  clone() {
-    var newDNA = new DNA(this.NUMBER_OF_POLYGONS, this.CANVAS_WIDTH, this.CANVAS_HEIGHT);
-    for (var i = 0; i < this.polygons.length; i++) {
-      var newPolygon = {};
-      newPolygon.color = Object.assign({}, this.polygons[i].color);
-
-      newPolygon.coordinates = [];
-      for (var j = 0; j < this.polygons[i].coordinates.length; j++) {
-        newPolygon.coordinates[j] = Object.assign({}, this.polygons[i].coordinates[j]);
-      }
-      newDNA.polygons.push(newPolygon);
-    }
-    return newDNA;
   }
 
 }
-
 
 module.exports = DNA;

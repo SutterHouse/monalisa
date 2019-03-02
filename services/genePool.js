@@ -1,51 +1,43 @@
-const DNA = require('./dna');
-const imageDiff = require('./imageDiff')
-const config = require('./config');
 const fs = require('fs');
-//const Promise = require('bluebird');
+const _ = require('lodash');
 
-const POPULATION_SIZE = config.genePool.POPULATION_SIZE;
+const DNA = require('./dna');
+const { getSourceImagePixels, pixelDiff } = require('./imageTools')
+const config = require('../config');
 
-module.exports = class GenePool {
+class GenePool {
   constructor() {
-    this.dnas = [];
-    for (var i = 0; i < POPULATION_SIZE; i++) {
-      var dna = new DNA();
-      dna.populate();
-      this.dnas.push(dna);
-    }
+    // config vars
+    this.genePoolPopulationSize = config.genePool.populationSize;
+    this.genePoolMatingProbability = config.genePool.matingProbability;
+    this.genePoolMaxAge = config.genePool.maxAge;
+    this.genePoolImmigrantsPerEpoch = config.genePool.immigrantsPerEpoch;
+
+    // mutable vars
+    this.dnas = _.times(this.genePoolPopulationSize, () => new DNA().populate());
   }
 
-  renderDnas () { // async
-    var promiseArray = [];
-    this.dnas.forEach((dna, index) => {
-      promiseArray.push(dna.render(`temp_${index}`));
+  getSourceImagePixels() {  // async
+    return getSourceImagePixels().then((pixelArr) => {
+      this.sourceImagePixels = pixelArr;
+    })
+  }
+
+  renderDnas () {
+    this.dnas.forEach((dna) => {
+      dna.renderToCanvas();
+    })
+  }
+
+  calculateDiffs () {
+    this.dnas.forEach((dna) => {
+      dna.diffScore = pixelDiff(dna.getPixelData(), this.sourceImagePixels);
     });
-    return Promise.all(promiseArray);
   }
 
-  calculateDiffs () { // async
-    var promiseArray = [];
-    this.dnas.forEach((dna, index) => {
-      const path = `./${config.PROJECT_NAME}/temp_${index}.png`;
-      if (fs.existsSync(path) && fs.existsSync(config.sourceImage.DIR)) {
-        promiseArray.push(
-          imageDiff(config.sourceImage.DIR, path)
-            .then(score => {
-              dna.diffScore = score;
-            })
-        );
-      } else {
-        console.error('source image exists:', fs.existsSync(config.sourceImage.DIR));
-        console.error('target image exists:', fs.existsSync(path));
-      }
-    });
-    return Promise.all(promiseArray);
-  }
-
-  rankAllByDiff () {
+  sortDnasByDiff () {
     this.dnas.sort((dna1, dna2) => {
-      return dna1.diffScore < dna2.diffScore ? -1 : 1;
+      return dna1.diffScore - dna2.diffScore;
     })
   }
 
@@ -54,31 +46,24 @@ module.exports = class GenePool {
     for (var i = 0; i < dna1.polygons.length; i++) {
       var p = Math.random();
       if (p < 0.5) {
-        child.polygons[i] = {};
-        child.polygons[i].color = Object.assign({}, dna1.polygons[i].color);
-        child.polygons[i].coordinates = dna1.polygons[i].coordinates.map((coordinate) => {
-          return Object.assign({}, coordinate);
-        });
+        child.polygons.push(_.cloneDeep(dna1.polygons[i]));
       } else {
-        child.polygons[i] = {};
-        child.polygons[i].color = Object.assign({}, dna2.polygons[i].color);
-        child.polygons[i].coordinates = dna2.polygons[i].coordinates.map((coordinate) => {
-          return Object.assign({}, coordinate);
-        });
+        child.polygons.push(_.cloneDeep(dna2.polygons[i]));
       }
     }
     return child;
   }
 
   initiateMatingSeason () {
-    var topIndex = Math.floor(this.dnas.length * config.genePool.MATING_PERCENTAGE);
-    for (var i = 0; i < topIndex - 1; i++) {
-      let j = i;
-      while(j === i) {
-        j = Math.floor(Math.random() * this.dnas.length);
+    const children = [];
+    for (var i = 0; i < this.dnas.length; i++) {
+      for (var j = 0; j < this.dnas.length; j++) {
+        if (Math.random() < this.genePoolMatingProbability) {
+          children.push(this.mate(this.dnas[i], this.dnas[j]))
+        }
       }
-      this.dnas.push(this.mate(this.dnas[i], this.dnas[j]));
     }
+    this.dnas.push(...children);
   }
 
   incrementAges () {
@@ -88,42 +73,28 @@ module.exports = class GenePool {
   }
 
   reapTheElderly() {
-    var newDnas = [];
-    this.dnas.forEach((dna) => {
-      if (dna.age < config.dna.MAX_AGE) {
-        newDnas.push(dna);
-      }
+    this.dnas = this.dnas.filter((dna) => {
+      return dna.age <= this.genePoolMaxAge;
     });
-    this.dnas = newDnas;
   }
 
   cullAll () {
-    while (this.dnas.length > POPULATION_SIZE) {
-      delete this.dnas.pop();
-    }
+    this.dnas = this.dnas.slice(0, this.genePoolPopulationSize);
   }
 
   mutateAll () {
-    this.dnas.forEach(dna => {
-      var p = Math.random();
-      if (p < config.dna.PROBABILITY_OF_MUTATION) {
-        dna.mutate();
-      }
-    })
+    this.dnas.forEach(dna => dna.mutate());
   }
 
   introduceImmigrants () {
-    const numberOfImmigrants = Math.floor(POPULATION_SIZE * config.dna.IMMIGRANTS_PER_EPOCH);
-
-    for (let i = 0; i < numberOfImmigrants; i++) {
-      const dna = new DNA();
-      dna.populate();
-      this.dnas.push(dna);
-    }
+    const numberOfImmigrants = Math.floor(this.genePoolPopulationSize * this.genePoolImmigrantsPerEpoch);
+    this.dnas.push(..._.times(numberOfImmigrants, () => new DNA().populate()));
   }
 
-  renderFittest (fileName) {
-    return this.dnas[0].render(fileName);
+  writeFittestToFile (fileName) {
+    return this.dnas[0].writeCanvasToPNG(fileName);
   }
 
 };
+
+module.exports = GenePool;

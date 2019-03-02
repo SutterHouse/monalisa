@@ -15,8 +15,8 @@ const getSourceImagePixels = () => {
 
 // assumes that pixel arrays in same format
 const pixelDiff = (pixels1, pixels2) => {
-  pixels1.reduce((score, current, idx) => {
-    return score + Math.abs(current - pixels2[idx]);
+  return pixels1.reduce((score, current, idx) => {
+    return score + Math.pow(current - pixels2[idx], 2);
   }, 0);
 };
 

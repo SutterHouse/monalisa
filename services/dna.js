@@ -140,7 +140,7 @@ class DNA {
     ctx.fillStyle = 'rgba(0,0,0,1)';
     ctx.fillRect(0, 0, this.imageWidth, this.imageHeight);
     
-    this.polygons.forEach((polygon, idx) => {
+    this.polygons.forEach((polygon) => {
       ctx.fillStyle = `rgba(${polygon.color.r}, ${polygon.color.g}, ${polygon.color.b}, ${this.dnaPolygonAlpha})`;
       ctx.beginPath();
       ctx.moveTo(polygon.coordinates[0].x, polygon.coordinates[0].y);
@@ -155,7 +155,7 @@ class DNA {
   getPixelData() {
     if (this.canvas) {
       const ctx = this.canvas.getContext('2d');
-      return ctx.getImageData(0, 0, this.imageWidth, this.imageHeight).data;
+      return [...ctx.getImageData(0, 0, this.imageWidth, this.imageHeight).data];
     }
   }
 
@@ -164,23 +164,16 @@ class DNA {
       return undefined;
     }
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       var dir = `./projects/${this.projectName}`;
 
       if (!fs.existsSync(dir)){
         fs.mkdirSync(dir);
       }
 
-      var out = fs.createWriteStream(dir + `/${fileName}.png`);
-      var stream = this.canvas.pngStream();
+      var buff = this.canvas.toBuffer();
 
-      stream.on('data', function(chunk){
-        out.write(chunk);
-      });
-      
-      stream.on('end', function(){
-        resolve();
-      });
+      fs.writeFileSync(dir + `/${fileName}.png`, buff, (err) => (err ? reject() : resolve()));
     });
   }
 

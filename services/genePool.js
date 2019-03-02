@@ -63,7 +63,7 @@ class GenePool {
         }
       }
     }
-
+    this.dnas.push(...children);
   }
 
   incrementAges () {

@@ -1,22 +1,22 @@
 module.exports = {
   projectName: 'genesis',
   epochCount: 10000,
-  epochLogInterval: 100,
+  epochLogInterval: 10,
   dna: {
-    polygonCount: 150,
+    polygonCount: 75,
     vertexCount: 3,
-    mutationProbability: 0.1,
-    polygonAlpha: 0.3
+    mutationProbability: 0.025,
+    polygonAlpha: 0.35
   },
   genePool: {
-    populationSize: 50,
+    populationSize: 10,
     matingProbability: 0.3,
     immigrantsPerEpoch: 0.2,
     maxAge: 10,
   },
   image: {
-    dir: './spec/compareImages/monalisa.png',
-    height: 350,
-    width: 350,
+    dir: './spec/compareImages/raptor.png',
+    height: 500,
+    width: 383,
   }
 };
